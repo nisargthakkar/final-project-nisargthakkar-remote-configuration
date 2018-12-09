@@ -1,0 +1,6 @@
+app: app1
+configs:
+  k1: 'v1_updated_again' # updated
+  # k2 deleted
+  k3: 'v3' # new config
+  k4: 'v4' # unchanged

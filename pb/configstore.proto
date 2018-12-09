@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package pb;
+
+// Represent a key-value pair that is used to return results.
+message ConfigItem {
+    string key = 1;
+    string value = 2;
+}
+
+// Represent a void message indicating success
+message Success {
+}
+
+// Represents an error.
+message Error {
+    string msg = 1;
+}
+
+// Represents request to get the config updates since the version specified
+message ConfigRequest {
+	string application = 1;
+	int64 previousVersion = 2;
+}
+
+message ConfigUpdateResponse {
+	oneof response {
+		Success success = 1;
+		Error err = 2;
+	}
+}
+
+message ConfigUpdateRequest {
+	string application = 1;
+	repeated ConfigItem configs = 2;
+}
+
+message Config {
+	int64 version = 1;
+	repeated ConfigItem configs = 2;
+}
+
+message ConfigResponse {
+	oneof response {
+			Config config = 1;
+			Error err = 2;
+	}
+}
+
+message Empty {}
+
+service ConfigStore {
+    // Get the config delta for an application.
+		rpc Get (ConfigRequest) returns (ConfigResponse) {}
+		// Update the config for a key and application
+		rpc Update (ConfigUpdateRequest) returns (ConfigUpdateResponse) {}
+}
+
+// service ConfigClient {
+// 	rpc Get (ConfigKey) retur 
+// }

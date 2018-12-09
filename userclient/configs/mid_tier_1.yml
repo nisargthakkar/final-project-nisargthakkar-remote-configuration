@@ -1,0 +1,5 @@
+app: app1
+configs:
+  k1: 'v1'
+  k2: 'v2'
+  k4: 'v4'
