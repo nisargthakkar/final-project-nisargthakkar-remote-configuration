@@ -11,23 +11,37 @@ The system consists of four major components:
 
 ## Technologies used
 gRPC for communication between all internal components (`CUC` <-> `CMS` <-> `CMC`)
+
 REST for communications between applications and CMC
+
 `CMS`, `CUC`, `CMC` written in Golang
+
 MySQL used as the choice of datastore
+
 Various client applications written in different languages
 
 ## Code structure
 `server/` : Code for CMS
+
 `client/` : Code for CMC
+
 `userclient/` : Code for CUC
+
 `front-tier/` : Sample python application using RCM
+
 `mid-tier/` : Sample Shell script using RCM
+
 `Makefile` : To build the code
 
 ## Usage
 To build the system, run ```make all```
+
 To run `CMS`, run ```server/server```
+
 To run `CMC`, run ```client/client 127.0.0.1:3000```
+
 To run `CUC`, run ```userclient/userclient 127.0.0.1:3000 <config.yml>```
+
 To run the Python front-tier app, run ```python3 front-tier/front-tier-app.py```
+
 To run the Bash mid-tier app, run ```mid-tier/mid-tier-app.sh```
