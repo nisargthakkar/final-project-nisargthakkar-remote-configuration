@@ -325,7 +325,7 @@ func (s *ConfigStore) Update(ctx context.Context, req *pb.ConfigUpdateRequest) (
 			if value.Value != updateConfigValue || !value.Valid {
 				updateAppConfig[key] = updateConfigValue
 			}
-		} else {
+		} else if value.Valid {
 			invalidAppConfig = append(invalidAppConfig, key)
 		}
 	}
