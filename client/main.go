@@ -28,7 +28,7 @@ type ConfigItem struct {
 var configs map[string]string
 
 func usage() {
-	fmt.Printf("Usage %s <endpoint>\n", os.Args[0])
+	fmt.Printf("Usage %s <endpoint> <appname>\n", os.Args[0])
 	flag.PrintDefaults()
 }
 
@@ -37,7 +37,7 @@ func main() {
 	flag.Usage = usage
 	flag.Parse()
 	// If there is no endpoint fail
-	if flag.NArg() == 0 {
+	if flag.NArg() < 2 {
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -51,7 +51,7 @@ func main() {
 	}
 	log.Printf("Connected")
 
-	appName := "app1"
+	appName := flag.Args()[1]
 
 	configs = make(map[string]string)
 
@@ -83,39 +83,52 @@ func blockForever() {
 
 func poller(rcs pb.ConfigStoreClient, appName string) {
 	ticker := time.NewTicker(POLL_FREQUENCY)
-	lastVersion := int64(0)
+	lastVersion := getConfig(rcs, appName, int64(0))
+
+	if lastVersion == -1 {
+		log.Fatalf("Unable to fetch configs")
+	}
 
 	for {
 		select {
 		case <- ticker.C:
 			log.Printf("Timer went off. Getting updated configs")
 			//Call the periodic function here.
-			// Create a request for the key hello
-			getConfigReq := &pb.ConfigRequest{Application: appName, PreviousVersion: lastVersion}
-			// Send request to server.
-			getConfigRes, getConfigErr := rcs.Get(context.Background(), getConfigReq)
-			// Ensure request does not fail.
-			if getConfigErr != nil {
-				log.Fatalf("Request error %v", getConfigErr)
-			}
-			// Done
-			log.Printf("Got response %v", getConfigRes.Response)
-
-			if getConfigRes.GetErr() != nil {
-				log.Printf("Got error: \"%v\"", getConfigRes.GetErr().Msg)
+			version := getConfig(rcs, appName, lastVersion)
+			if version == -1 {
 				continue
 			}
-
-			lastVersion = getConfigRes.GetConfig().Version
-			configUpdates := getConfigRes.GetConfig().Configs
-
-			for _, configUpdate := range configUpdates {
-				if configUpdate.Value == "" {
-					delete(configs, configUpdate.Key);
-				}
-				configs[configUpdate.Key] = configUpdate.Value
-			}
-			log.Printf("%v", configs)
+			lastVersion = version
 		}
 	}
+}
+
+func getConfig(rcs pb.ConfigStoreClient, appName string, lastVersion int64) int64 {
+	// Create a request for the key hello
+	getConfigReq := &pb.ConfigRequest{Application: appName, PreviousVersion: lastVersion}
+	// Send request to server.
+	getConfigRes, getConfigErr := rcs.Get(context.Background(), getConfigReq)
+	// Ensure request does not fail.
+	if getConfigErr != nil {
+		log.Fatalf("Request error %v", getConfigErr)
+	}
+	// Done
+	log.Printf("Got response %v", getConfigRes.Response)
+
+	if getConfigRes.GetErr() != nil {
+		log.Printf("Got error: \"%v\"", getConfigRes.GetErr().Msg)
+		return -1;
+	}
+
+	configUpdates := getConfigRes.GetConfig().Configs
+
+	for _, configUpdate := range configUpdates {
+		if configUpdate.Value == "" {
+			delete(configs, configUpdate.Key);
+		}
+		configs[configUpdate.Key] = configUpdate.Value
+		log.Printf("Updated app config: %v", configs)
+	}
+
+	return getConfigRes.GetConfig().Version
 }

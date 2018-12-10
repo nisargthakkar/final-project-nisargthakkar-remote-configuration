@@ -38,7 +38,7 @@ To build the system, run ```make all```
 
 To run `CMS`, run ```server/server```
 
-To run `CMC`, run ```client/client 127.0.0.1:3000```
+To run `CMC`, run ```client/client 127.0.0.1:3000 <appname>```
 
 To run `CUC`, run ```userclient/userclient 127.0.0.1:3000 <config.yml>```
 
