@@ -18,7 +18,7 @@ REST for communications between applications and CMC
 
 MySQL used as the choice of datastore
 
-Various client applications written in different languages
+Client applications written in Bash and Python
 
 ## Code structure
 `server/` : Code for CMS
@@ -33,15 +33,54 @@ Various client applications written in different languages
 
 `Makefile` : To build the code
 
+`k8s-configs/` : Configs to define kubernetes services and deployments
+
+`test/configs/` : Sample configurations for two applications
+
 ## Usage
-To build the system, run ```make all```
+To build the system, run `make all`
 
-To run `CMS`, run ```server/server```
+To make the docker images, run `make docker`
 
-To run `CMC`, run ```client/client 127.0.0.1:3000 <appname>```
+To deploy the database run `make dbsetup`
 
-To run `CUC`, run ```userclient/userclient 127.0.0.1:3000 <config.yml>```
+To set up the required schema run `make dblogin`
 
-To run the Python front-tier app, run ```python3 front-tier/front-tier-app.py```
+To create our database schemas, run the following commands:
+```
+use appconfig;
 
-To run the Bash mid-tier app, run ```mid-tier/mid-tier-app.sh```
+DROP TABLE configurations;
+
+CREATE TABLE configurations (
+	is_valid BOOLEAN,
+	application VARCHAR(20),
+	config_key VARCHAR(20),
+	config_value TEXT,
+	update_time INT(11)
+);
+```
+
+Once the DB Table is set up, we can start our services.
+
+To startup the services and applications, run `make system`
+
+To stop the services and applications, run `make halt`
+
+To stop the database run `make dbkill`
+
+To start the database again run `make db`
+
+To delete the persistent volumes of the database, run `make dbreset`
+
+To update configs for any application, run `make updateconfig CONFIG=<configfile.yml>`
+
+
+## YAML config structure
+```
+app: SampleApplication
+configs:
+  k1: 'v1'
+  k2: 'v2'
+  ...
+ ```

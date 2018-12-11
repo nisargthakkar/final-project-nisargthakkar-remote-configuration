@@ -1,0 +1,66 @@
+# apiVersion: v1
+# kind: Pod
+# metadata:
+#   name: configpollpythonweb
+#   labels:
+#     app: configpollpythonweb
+# spec:
+#   containers:
+#   - name: cmc-container
+#     image: local/config-management-client
+#     imagePullPolicy: Never
+#     command: ['client', 'config-management-server:3000', 'configpollpythonweb']
+#     ports:
+#     - name: cmc-api-port
+#       containerPort: 8000
+#   - name: configpollpythonweb
+#     image: local/config-management-front-tier
+#     imagePullPolicy: Never
+#     command: ['python', './front-tier-app.py']
+#     ports:
+#     - name: web-list-port
+#       containerPort: 8080
+# ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: configpollpythonweb
+spec:
+  type: NodePort
+  selector:
+    app: configpollpythonweb
+  ports:
+  - port: 8080
+    targetPort: web-list-port
+    protocol: TCP
+    name: web-list-port
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: configpollpythonweb
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: configpollpythonweb
+  template:
+    metadata:
+      labels:
+        app: configpollpythonweb
+    spec:
+      containers:
+      - name: cmc-container
+        image: local/config-management-client
+        imagePullPolicy: Never
+        command: ['client', 'config-management-server:3000', 'configpollpythonweb']
+        ports:
+        - name: cmc-api-port
+          containerPort: 8000
+      - name: configpollpythonweb
+        image: local/config-management-front-tier
+        imagePullPolicy: Never
+        command: ['python', '-u', './front-tier-app.py']
+        ports:
+        - name: web-list-port
+          containerPort: 8080

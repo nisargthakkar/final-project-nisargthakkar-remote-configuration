@@ -1,0 +1,5 @@
+app: configpollpythonweb
+configs:
+  k1: 'v1'
+  outfile: 'outfile1.txt'
+  verboseLogging: 'True'

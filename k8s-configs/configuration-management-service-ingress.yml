@@ -1,0 +1,27 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: configuration-management-ingress
+spec:
+  rules:
+  - http:
+      paths:
+      - backend:
+          serviceName: configpollpythonweb
+          servicePort: 8080
+  - http:
+      paths:
+      - path: /v1
+        backend:
+          serviceName: configuration-update-client
+          servicePort: 8001
+  # backend:
+  #   serviceName: configuration-update-client
+  #   servicePort: 8001
+  # rules:
+  # - http:
+  #     paths:
+  #     - path: /dir
+  #       backend:
+  #         serviceName: configpollpythonweb
+  #         servicePort: 8080

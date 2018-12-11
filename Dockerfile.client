@@ -1,0 +1,10 @@
+FROM golang:1.11.0
+WORKDIR /go/src/github.com/nisargthakkar/final-project-nisargthakkar-remote-configuration/client
+COPY client .
+COPY pb ../pb
+
+RUN go get -v ./...
+RUN go install -v ./...
+
+EXPOSE 3000 8000
+CMD ["client"]

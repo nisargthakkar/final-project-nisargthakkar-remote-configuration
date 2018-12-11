@@ -55,7 +55,3 @@ service ConfigStore {
 		// Update the config for a key and application
 		rpc Update (ConfigUpdateRequest) returns (ConfigUpdateResponse) {}
 }
-
-// service ConfigClient {
-// 	rpc Get (ConfigKey) retur 
-// }

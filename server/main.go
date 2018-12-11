@@ -5,6 +5,8 @@ import (
 	"net"
 	"fmt"
 	"strconv"
+	"os"
+	"flag"
 
 	context "golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -27,16 +29,16 @@ type ConfigItem struct {
 const GET_LATEST_VERSION_QUERY = `SELECT c1.is_valid, c1.config_key, c1.config_value, c1.update_time
 FROM (
 	SELECT application, config_key, MAX(update_time) AS prev_max_time
-	FROM configurations_temp
+	FROM configurations
 	WHERE application = "%v"
 	GROUP BY config_key
 ) AS c2
-INNER JOIN configurations_temp AS c1
+INNER JOIN configurations AS c1
 ON c1.config_key = c2.config_key
 AND c1.update_time = c2.prev_max_time
 AND c1.application = c2.application`
 
-const UPDATE_APP_CONFIG_QUERY = `UPDATE configurations_temp
+const UPDATE_APP_CONFIG_QUERY = `UPDATE configurations
 SET is_valid = True,
 config_value = "%[3]v",
 update_time = UNIX_TIMESTAMP(NOW())
@@ -44,13 +46,13 @@ WHERE config_key = "%[2]v"
 AND application = "%[1]v";
 `
 
-const INSERT_APP_CONFIG_QUERY = `INSERT INTO configurations_temp
+const INSERT_APP_CONFIG_QUERY = `INSERT INTO configurations
 (is_valid, application, config_key, config_value, update_time)
 VALUES
 (True, '%[1]v', '%[2]v', '%[3]v', UNIX_TIMESTAMP(NOW()));
 `
 
-const DELETE_APP_CONFIG_QUERY = `UPDATE configurations_temp
+const DELETE_APP_CONFIG_QUERY = `UPDATE configurations
 SET is_valid = False,
 config_value = "",
 update_time = UNIX_TIMESTAMP(NOW())
@@ -61,11 +63,11 @@ AND application = "%[1]v";
 const GET_UPDATES_QUERY = `SELECT c1.is_valid, c1.config_key, c1.config_value, c1.update_time
 FROM (
 	SELECT application, config_key, MAX(update_time) AS prev_max_time
-	FROM configurations_temp
+	FROM configurations
 	WHERE application = "%[1]v"
 	GROUP BY config_key
 ) AS c2
-INNER JOIN configurations_temp AS c1
+INNER JOIN configurations AS c1
 ON c1.config_key = c2.config_key
 AND c1.update_time = c2.prev_max_time
 AND c1.application = c2.application
@@ -85,12 +87,28 @@ COMMIT;`
 var database *sql.DB 
 var dbCtx = context.Background()
 
+func usage() {
+	fmt.Printf("Usage %s <mysql-endpoint>\n", os.Args[0])
+	flag.PrintDefaults()
+}
+
 func main() {
+	// Take endpoint as input
+	flag.Usage = usage
+	flag.Parse()
+	// If there is no endpoint fail
+	if flag.NArg() == 0 {
+		flag.Usage()
+		os.Exit(1)
+	}
+	endpoint := flag.Args()[0]
+
 	const Port = ":3000"
 	// First initialize the store
 	store := ConfigStore{}
 
-	db, err := sql.Open("mysql", "root:distributed_systems@/appconfig")
+	mysqlconfig := fmt.Sprintf("root:distributed_systems@(%v)/appconfig", endpoint)
+	db, err := sql.Open("mysql", mysqlconfig)
 
 	if err != nil {
 		log.Fatalf("Failed to connect to MySQL server")

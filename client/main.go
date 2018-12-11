@@ -18,7 +18,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-const POLL_FREQUENCY = 5 * time.Second
+const POLL_FREQUENCY = 10 * time.Second
 
 type ConfigItem struct {
 	Key				string   `json:"key,omitempty"`
@@ -56,9 +56,9 @@ func main() {
 	configs = make(map[string]string)
 
 	// Create a ConfigStore client
-	rcs := pb.NewConfigStoreClient(conn)
+	cms := pb.NewConfigStoreClient(conn)
 
-	go poller(rcs, appName)
+	go poller(cms, appName)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/v1/config/{key}", GetConfig).Methods("GET")
@@ -74,6 +74,8 @@ func GetConfig(w http.ResponseWriter, r *http.Request) {
 		config = ConfigItem{Key: key, Value: val}
 	}
 
+	log.Printf("Got config request for %v: %v", key, config)
+
 	json.NewEncoder(w).Encode(config)
 }
 
@@ -81,9 +83,9 @@ func blockForever() {
 	select{ }
 }
 
-func poller(rcs pb.ConfigStoreClient, appName string) {
+func poller(cms pb.ConfigStoreClient, appName string) {
 	ticker := time.NewTicker(POLL_FREQUENCY)
-	lastVersion := getConfig(rcs, appName, int64(0))
+	lastVersion := getConfig(cms, appName, int64(0))
 
 	if lastVersion == -1 {
 		log.Fatalf("Unable to fetch configs")
@@ -94,7 +96,7 @@ func poller(rcs pb.ConfigStoreClient, appName string) {
 		case <- ticker.C:
 			log.Printf("Timer went off. Getting updated configs")
 			//Call the periodic function here.
-			version := getConfig(rcs, appName, lastVersion)
+			version := getConfig(cms, appName, lastVersion)
 			if version == -1 {
 				continue
 			}
@@ -103,11 +105,11 @@ func poller(rcs pb.ConfigStoreClient, appName string) {
 	}
 }
 
-func getConfig(rcs pb.ConfigStoreClient, appName string, lastVersion int64) int64 {
+func getConfig(cms pb.ConfigStoreClient, appName string, lastVersion int64) int64 {
 	// Create a request for the key hello
 	getConfigReq := &pb.ConfigRequest{Application: appName, PreviousVersion: lastVersion}
 	// Send request to server.
-	getConfigRes, getConfigErr := rcs.Get(context.Background(), getConfigReq)
+	getConfigRes, getConfigErr := cms.Get(context.Background(), getConfigReq)
 	// Ensure request does not fail.
 	if getConfigErr != nil {
 		log.Fatalf("Request error %v", getConfigErr)

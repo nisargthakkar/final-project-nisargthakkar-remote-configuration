@@ -1,0 +1,9 @@
+FROM bash:4.4
+
+RUN apk add --no-cache curl
+
+RUN ["cp", "/usr/local/bin/bash", "/bin/bash"]
+COPY mid-tier/mid-tier-app.sh .
+COPY . .
+
+CMD [ "./mid-tier-app.sh" ]
